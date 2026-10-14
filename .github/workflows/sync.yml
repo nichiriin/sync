@@ -96,6 +96,7 @@ jobs:
           deadline=$((SECONDS + 110 * 60))
           copy_folder() {
             local folder="$1" transfers="$2" remaining status=0
+            shift 2
             remaining=$((deadline - SECONDS))
             if ((remaining <= 0)); then
               echo "$folder skipped: shared copy duration reached." >> "$GITHUB_STEP_SUMMARY"
@@ -106,14 +107,14 @@ jobs:
               set +e
               timeout --signal=TERM --kill-after=30s "$((remaining + 30))s" \
                 rclone copy "tdrive:$folder" "gpix:$folder" --transfers "$transfers" \
-                --max-duration "${remaining}s" "${common[@]}" 2>&1 \
+                --max-duration "${remaining}s" "${common[@]}" "$@" 2>&1 \
                 | tee "$RUNNER_TEMP/rclone-sync/$folder.log"
               status=${PIPESTATUS[0]}
               set -e
             else
               timeout --signal=TERM --kill-after=30s "$((remaining + 30))s" \
                 rclone copy "tdrive:$folder" "gpix:$folder" --transfers "$transfers" \
-                --max-duration "${remaining}s" "${common[@]}" \
+                --max-duration "${remaining}s" "${common[@]}" "$@" \
                 > "$RUNNER_TEMP/rclone-sync/$folder.log" 2>&1 || status=$?
             fi
             echo "$folder exit status: $status" >> "$GITHUB_STEP_SUMMARY"
@@ -125,7 +126,7 @@ jobs:
           }
           # Sequential copies: library must finish before assets starts.
           copy_folder library 7
-          copy_folder assets 25
+          copy_folder assets 4 --tpslimit 1 --tpslimit-burst 1
 
       - name: Clean up
         if: always()
