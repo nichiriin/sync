@@ -62,10 +62,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker pull ghcr.io/tgdrive/teldrive:v2
+          docker pull ghcr.io/tgdrive/teldrive:2
           docker run --detach --name teldrive-sync --network host \
             --env-file "$RUNNER_TEMP/rclone-sync/teldrive.env" \
-            ghcr.io/tgdrive/teldrive:v2 > /dev/null
+            ghcr.io/tgdrive/teldrive:2 > /dev/null
           # Any HTTP response confirms the listener is up; authentication is checked by rclone.
           for attempt in $(seq 1 60); do
             if curl --silent --output /dev/null --max-time 3 http://localhost:8080/; then exit 0; fi
@@ -84,7 +84,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          common=(--check-first --order-by modtime,desc --teldrive-api-host http://localhost:8080
+          common=(--fast-list --check-first --order-by modtime,desc --teldrive-api-host http://localhost:8080
             --cutoff-mode HARD --retries 1
             --stats 1m --stats-one-line)
           if test "$DETAILED_LOGS" = true; then
